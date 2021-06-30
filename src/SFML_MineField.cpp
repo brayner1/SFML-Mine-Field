@@ -2,6 +2,7 @@
 //
 
 #include <iostream>
+#include <Grid/Grid.h>
 #include <SFML/Graphics.hpp>
 
 class MineFieldApp 
@@ -30,21 +31,9 @@ public:
 
         const int gridSize = 10;
         const float cellSize = 400.0f / gridSize;
-        std::cout << "cell size: " << cellSize << std::endl;
-        sf::RectangleShape grid[gridSize][gridSize];
-        for (int i = 0; i < gridSize; i++) {
-            for (size_t j = 0; j < gridSize; j++)
-            {
-                sf::RectangleShape* gridCell = &grid[i][j];
-                gridCell->setSize(sf::Vector2f(cellSize, cellSize));
-                gridCell->setOrigin(cellSize / 2, cellSize / 2);
-                gridCell->setPosition((width / 2 - 200) + i * cellSize + cellSize/2, (height / 2 - 200) + j * cellSize + cellSize / 2);
-                gridCell->setFillColor(sf::Color(180, 180, 180));
-                gridCell->setOutlineColor(sf::Color::Black);
-                gridCell->setOutlineThickness(1);
-                std::cout << "cell[" << i << ", " << j << "]: " << gridCell->getPosition().x << ", " << gridCell->getPosition().y << std::endl;
-            }
-        }
+        
+        
+        Grid grid(sf::Vector2u(10, 20), 400, sf::Vector2f(width/2, height/2), 10);
 
         while (window.isOpen())
         {
@@ -56,11 +45,27 @@ public:
             {
                 if (event.type == sf::Event::Closed)
                     window.close();
+
+                if (event.type == sf::Event::MouseButtonPressed)
+                {
+                    if (event.mouseButton.button == sf::Mouse::Left)
+                    {
+                        //std::cout << "the left button was pressed" << std::endl;
+                        //std::cout << "\tmouse x: " << event.mouseButton.x << std::endl;
+                        //std::cout << "\tmouse y: " << event.mouseButton.y << std::endl;
+                        sf::Vector2u index;
+                        if (grid.NodeClicked(sf::Vector2f(event.mouseButton.x, event.mouseButton.y), index))
+                        {
+                            grid.OpenNode(index);
+                        }
+                        
+                    }
+                }
             }
 
-            window.clear(sf::Color(220, 220, 220));
+            window.clear(sf::Color(235, 235, 235));
 
-            
+            grid.RenderGrid(window);
 
             window.display();
 
