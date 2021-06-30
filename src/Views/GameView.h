@@ -1,13 +1,15 @@
 ﻿#pragma once
 #include <SFML/Graphics.hpp>
+#include <Views/View.h>
 #include <string>
 #include <random>
 #include <set>
 
 // Class that manages and render a grid of rectangle cells that can contain bombs
 // This class also implements the logics of the Mine Field Game
-class Grid {
+class GameView final : public View {
 private:
+/* Grid Attributes */
 	// Rectangle that act as the "container" of the grid
 	sf::RectangleShape gridRect;
 	// The size of the grid in number of cells
@@ -16,19 +18,26 @@ private:
 	// The structure that defines the grid nodes
 	struct GridNode{
 		sf::RectangleShape rect;
-		sf::Text numBombs;
+		sf::Text nodeChar;
 		sf::Vector2f position;
 		int neighBombs;
 		bool bomb;
 		bool opened;
+		bool marked;
 	}* nodes;	// The pointer that will be initialized as the grid
 
 	// The number of bombs in this grid
 	float bombNumber;
 
-// MACRO that calculate the index of an array based on a matrix indexation
-// 'i' represents the line and 'j' the column
-#define convertIndex(i, j) ((i) * gridSize.x + (j))
+/* Stats Attributes */
+	// Time elapsed since the start of the game
+	sf::Time elapsedTime;
+	// Bombs marked by the player
+	size_t bombsMarked;
+
+	// MACRO that calculate the index of an array based on a matrix indexation
+	// 'i' represents the line and 'j' the column
+	#define convertIndex(i, j) ((i) * gridSize.x + (j))
 
 	// Method that populates the grid with the number of bombs defined by the player.
 	// It populates the grid with bombs in a uniform distribution.
@@ -37,7 +46,7 @@ private:
 		// Obtain a random number from hardware
 		std::random_device rd;
 
-		// Seed the generator
+		// Seed the generator with the random_device number
 		std::mt19937 gen(rd());
 
 		// Define distribution the range
@@ -54,7 +63,6 @@ private:
 			if (!node.bomb)
 			{
 				node.bomb = true;
-				node.opened = true;
 				i++;
 			}
 		}
@@ -116,7 +124,7 @@ public:
 	// gridWindowSize -> grid size in the screen (pixels)
 	// gridPosition -> the position of the grid on the screen
 	// bombNumber -> the number of bombs on the grid
-	Grid(sf::Vector2u gridSize, float gridWindowSize, sf::Vector2f gridPosition, int bombNumber) 
+	GameView(sf::Vector2u gridSize, float gridWindowSize, sf::Vector2f gridPosition, int bombNumber) 
 	{
 		// Store the grid size (number of cells)
 		this->gridSize = gridSize;
@@ -126,7 +134,7 @@ public:
 		// Store the number of bombs
 		this->bombNumber = bombNumber;
 		
-		// Initialize the rect that act as the grid container
+		// Initialize the rectangle that act as the grid container
 		gridRect.setSize(sf::Vector2f(gridWindowSize, gridWindowSize));
 		gridRect.setOrigin(gridWindowSize/2, gridWindowSize/2);	// Set the origin to the middle of the rectangle
 		gridRect.setPosition(gridPosition);
@@ -149,7 +157,8 @@ public:
 			{
 				GridNode& node = nodes[convertIndex(i,j)];
 
-				node.opened = node.bomb;
+				node.opened = false;
+				node.marked = false;
 
 				// Initialize the position and attributes of the cell rectangle that graphically represents this cell
 				sf::Vector2f relativePos = sf::Vector2f( ((int)j - (int)gridSize.x / 2) * cellSize.x + cellSize.x / 2 * (1.0f - (gridSize.x % 2)),
@@ -165,26 +174,28 @@ public:
 
 
 				// Initialize the text shape which will render the number of adjecent bombs, if there is any, when the cell is opened by the player
-				std::string str = node.neighBombs > 0 ? std::to_string(node.neighBombs) : "";
+				std::string str = "";
 				str = node.bomb ? "99" : str;
-				node.numBombs.setString(str);
-				node.numBombs.setFont(*textFont);
+				node.nodeChar.setString(str);
+				node.nodeChar.setFont(*textFont);
 				float charSize = std::floor(std::min(cellSize.x / 1.4f, cellSize.y / 1.4f)); // Calculate the character size to fit in the cell
-				node.numBombs.setCharacterSize(charSize);
-				node.numBombs.setOrigin(sf::Vector2f(charSize/2, charSize/2));
-				node.numBombs.setPosition(node.position);
-				node.numBombs.setFillColor(sf::Color::Red);
+				node.nodeChar.setCharacterSize(charSize);
+				node.nodeChar.setOrigin(sf::Vector2f(charSize/2, charSize/2));
+				node.nodeChar.setPosition(node.position);
+				node.nodeChar.setFillColor(sf::Color::Red);
 			}
 		}
 	}
 
 	// Return if there is bomb in the given index
-	bool isBomb(sf::Vector2u nodeIndex) { return nodes[nodeIndex.y * gridSize.y + nodeIndex.x].bomb; }
+	bool isBomb(sf::Vector2u nodeIndex) { return nodes[convertIndex(nodeIndex.x, nodeIndex.y)].bomb; }
 	// Return if the node was already opened in the given index
-	bool isOpened(sf::Vector2u nodeIndex) { return nodes[nodeIndex.y * gridSize.y + nodeIndex.x].opened; }
+	bool isOpened(sf::Vector2u nodeIndex) { return nodes[convertIndex(nodeIndex.x, nodeIndex.y)].opened; }
+
+	bool isMarked(sf::Vector2u nodeIndex) { return nodes[convertIndex(nodeIndex.x, nodeIndex.y)].marked; }
 
 	// Render the grid rectangle and its containing cells
-	void RenderGrid(sf::RenderWindow& window) 
+	void RenderView(sf::RenderWindow& window) override
 	{
 		window.draw(gridRect);
 		for (size_t i = 0; i < gridSize.y; i++)
@@ -193,9 +204,9 @@ public:
 			{
 				GridNode& node = nodes[convertIndex(i,j)];
 				sf::RectangleShape& gridCell = node.rect;
-				sf::Text& numBombs = node.numBombs;
+				sf::Text& numBombs = node.nodeChar;
 				window.draw(gridCell);
-				if (node.opened)
+				//if (node.opened)
 					window.draw(numBombs);
 
 			}
@@ -224,6 +235,7 @@ public:
 		return false;
 	}
 
+	// Open the node in the given Index. If the node is not neighbor to any bomb, it opens it's neighbors nodes.
 	void OpenNode(sf::Vector2u nodeIndex) 
 	{
 		// Get the line and column, where 'nodeIndex.x' is actually the line and 'nodeIndex.y' the column
@@ -231,13 +243,14 @@ public:
 
 
 		GridNode& node = nodes[convertIndex(i, j)];
-		if (node.opened)
+		if (node.opened || node.marked || node.bomb)
 			return;
 		node.opened = true;
 		node.rect.setFillColor(sf::Color(210, 210, 210));
 
 		if (node.neighBombs == 0) 
 		{
+			node.nodeChar.setString("");
 			// ↖
 			if (i > 0 && j > 0)
 				OpenNode(sf::Vector2u(i - 1, j - 1));
@@ -270,7 +283,39 @@ public:
 			if (i < gridSize.y - 1 && j < gridSize.x - 1)
 				OpenNode(sf::Vector2u(i + 1, j + 1));
 		}
+		else 
+		{
+			node.nodeChar.setString(std::to_string(node.neighBombs));
+		}
 		return;
 	}
 
+	// Toggle a marker on the node, indicating that the user thinks there is a bomb in this node.
+	void ToggleMarkNode(sf::Vector2u nodeIndex)
+	{
+		// Get the line and column, where 'nodeIndex.x' is actually the line and 'nodeIndex.y' the column
+		size_t i = nodeIndex.x, j = nodeIndex.y;
+
+
+		GridNode& node = nodes[convertIndex(i, j)];
+		if (node.opened)
+			return;
+
+
+		// If the node is not marked, 
+		if (!node.marked)
+		{
+			node.nodeChar.setString("M");
+			node.marked = true;
+			bombsMarked++;
+		}
+		else
+		{
+			node.nodeChar.setString("");
+			node.marked = false;
+			bombsMarked--;
+		}
+
+
+	}
 };

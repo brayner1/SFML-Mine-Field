@@ -2,22 +2,83 @@
 //
 
 #include <iostream>
-#include <Grid/Grid.h>
+#include <Views/View.h>
+#include <Views/GameView.h>
 #include <SFML/Graphics.hpp>
 
 class MineFieldApp 
 {
 private:
+// Window Properties
     // Window Object
     sf::RenderWindow window;
     // Window Size
     sf::Vector2u size;
-    // Window Aspect Ratio
-    float aspect;
 
-    // Public Methods
+    // The current view in the application
+    View* currentView;
+    // The current view type
+    enum ViewType { MENU, OPTIONS, GAME, GAMEOVER } 
+    viewType;
+
+// Game Properties
+    // Number of bombs
+    size_t numBombs;
+    // Size of the grid in number of cells
+    sf::Vector2u gridSize;
+
+    void ProcessEvent(sf::Event event) 
+    {
+        if (event.type == sf::Event::Closed)
+            window.close();
+
+        if (event.type == sf::Event::MouseButtonPressed)
+        {
+            switch (viewType)
+            {
+            case MENU:
+                break;
+            case OPTIONS:
+                break;
+            case GAME:
+            {
+                sf::Vector2u index;
+                GameView* gameView = (GameView*)this->currentView;
+                bool nodeClicked = gameView->NodeClicked(sf::Vector2f(event.mouseButton.x, event.mouseButton.y), index);
+                if (nodeClicked)
+                {
+                    if (event.mouseButton.button == sf::Mouse::Left)
+                    {
+                        // If player clicked on a bomb cell and it is not marked, then it is a Game Over
+                        if (!gameView->isMarked(index)) 
+                        {
+                            if (gameView->isBomb(index))
+                                std::cout << "GAME OVER" << std::endl;
+                            else
+                                gameView->OpenNode(index);
+                        }
+                    }
+                    else if (event.mouseButton.button == sf::Mouse::Right)
+                    {
+                        gameView->ToggleMarkNode(index);
+                    }
+                }
+                break;
+            }
+            case GAMEOVER:
+                break;
+            default:
+                break;
+            }
+            
+        }
+    }
+
 public:
-    MineFieldApp(sf::Vector2u size) : size(size) { aspect = (float)size.x / size.y; }
+    MineFieldApp(sf::Vector2u size) : size(size) 
+    { 
+
+    }
 
     int MainLoop() {
         // Clock for measuring deltaTime in each frame
@@ -26,14 +87,11 @@ public:
         // Window Creation
         size_t width = size.x, height = size.y;
         window.create(sf::VideoMode(width, height), "Campo Minado", sf::Style::Close | sf::Style::Titlebar);
-
         
 
-        const int gridSize = 10;
-        const float cellSize = 400.0f / gridSize;
-        
-        
-        Grid grid(sf::Vector2u(10, 20), 400, sf::Vector2f(width/2, height/2), 10);
+
+        this->currentView = new GameView(sf::Vector2u(10, 20), 400, sf::Vector2f(width/2, height/2), 20);
+        this->viewType = GAME;
 
         while (window.isOpen())
         {
@@ -43,29 +101,12 @@ public:
             sf::Event event;
             while (window.pollEvent(event))
             {
-                if (event.type == sf::Event::Closed)
-                    window.close();
-
-                if (event.type == sf::Event::MouseButtonPressed)
-                {
-                    if (event.mouseButton.button == sf::Mouse::Left)
-                    {
-                        //std::cout << "the left button was pressed" << std::endl;
-                        //std::cout << "\tmouse x: " << event.mouseButton.x << std::endl;
-                        //std::cout << "\tmouse y: " << event.mouseButton.y << std::endl;
-                        sf::Vector2u index;
-                        if (grid.NodeClicked(sf::Vector2f(event.mouseButton.x, event.mouseButton.y), index))
-                        {
-                            grid.OpenNode(index);
-                        }
-                        
-                    }
-                }
+                this->ProcessEvent(event);
             }
 
             window.clear(sf::Color(235, 235, 235));
 
-            grid.RenderGrid(window);
+            this->currentView->RenderView(window);
 
             window.display();
 
