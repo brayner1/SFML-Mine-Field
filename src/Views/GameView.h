@@ -41,7 +41,7 @@ private:
 	sf::Clock elapsedClock;
 	
 	// Bombs marked by the player
-	size_t bombsMarked;
+	size_t cellsMarked;
 	
 	// The number of cells already opened. Used to check the victory condition
 	size_t cellsOpened;
@@ -145,11 +145,10 @@ public:
 		this->gridSize = gridSize;
 		// Allocate the grid array
 		this->nodes = new GridNode[gridSize.x * gridSize.y];
-		std::cout << "GridSize: " << gridSize.x * gridSize.y << std::endl;
 		// Store the number of bombs
 		this->bombNumber = bombNumber;
-		// Initialized the cellsOpened and bombsMarked counters
-		this->cellsOpened = this->bombsMarked =  0;
+		// Initialized the cellsOpened and cellsMarked counters
+		this->cellsOpened = this->cellsMarked =  0;
 		
 		// Initialize the rectangle that act as the grid container
 		gridRect.setSize(sf::Vector2f(gridFrameSize, gridFrameSize));
@@ -247,7 +246,7 @@ public:
 			}
 		}
 
-		std::string str = std::to_string(bombsMarked) + " / " + std::to_string((int)bombNumber) + "\tElapsed Time: " + std::to_string(time.asSeconds());
+		std::string str = std::to_string(cellsMarked) + " / " + std::to_string((int)bombNumber) + "\tElapsed Time: " + std::to_string(time.asSeconds());
 		bombsMarkedText.setString(str);
 
 		window.draw(bottomRect);
@@ -355,14 +354,14 @@ public:
 		{
 			node.nodeChar.setString("M");
 			node.marked = true;
-			bombsMarked++;
+			cellsMarked++;
 		}
 		// Otherwise, turn it blank
 		else
 		{
 			node.nodeChar.setString("");
 			node.marked = false;
-			bombsMarked--;
+			cellsMarked--;
 		}
 
 

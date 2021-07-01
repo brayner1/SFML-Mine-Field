@@ -45,7 +45,7 @@ public:
 		playAgainText.setPosition(3.5f * windowSize.x / 5, 2 * windowSize.y / 3);
 		playAgainText.setFillColor(sf::Color::White);
 
-		// Initialize the Menu button and it's text
+		// Initialize the Main Menu button and it's text
 		menuButton.setSize(sf::Vector2f(windowSize.x / 3, windowSize.y / 10));
 		menuButton.setOrigin(windowSize.x / 6, windowSize.y / 20);
 		menuButton.setPosition(1.5f * windowSize.x / 5, 2 * windowSize.y / 3);
@@ -59,9 +59,12 @@ public:
 		menuText.setFillColor(sf::Color::White);
 	}
 
+	// Return true if the Restart button is clicked
 	bool RestartClicked(sf::Vector2f clickPosition) { return playAgainButton.getGlobalBounds().contains(clickPosition); }
+	// Return true if the Main Menu button is clicked
 	bool MainMenuClicked(sf::Vector2f clickPosition) { return menuButton.getGlobalBounds().contains(clickPosition); }
 
+	// Draw the message screen elements
 	void RenderView(sf::RenderWindow& window) override
 	{
 		window.draw(message);

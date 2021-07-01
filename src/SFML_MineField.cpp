@@ -5,6 +5,8 @@
 #include <Views/View.h>
 #include <Views/GameView.h>
 #include <Views/MessageView.h>
+#include <Views/MenuView.h>
+#include <Views/OptionsView.h>
 #include <SFML/Graphics.hpp>
 
 
@@ -28,9 +30,9 @@ private:
 
 /*  Game Properties */
     // Number of bombs
-    //size_t numBombs;
+    size_t numBombs;
     // Size of the grid in number of cells
-    //sf::Vector2u gridSize;
+    sf::Vector2u gridSize;
 
     void ProcessEvent(sf::Event event) 
     {
@@ -60,6 +62,7 @@ private:
                                 this->viewType = ViewType::MESSAGE;
                                 return;
                             }
+                            // Otherwise, the cell is opened
                             else
                                 gameView->OpenNode(index);
 
@@ -82,9 +85,63 @@ private:
                 break;
             }
             case ViewType::MENU:
+            {
+                MenuView* menuView = (MenuView*)this->currentView;
+                if (event.mouseButton.button == sf::Mouse::Left)
+                {
+                    sf::Vector2f clickPosition = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
+                    if (menuView->PlayClicked(clickPosition)) 
+                    {
+                        this->currentView = new GameView(sf::Vector2u(gridSize.x, gridSize.y), sf::Vector2f(size.x, size.y), size.x - 100, sf::Vector2f(size.x / 2, size.y / 2), this->numBombs);
+                        this->viewType = ViewType::GAME;
+                    }
+                    else if (menuView->OptionsClicked(clickPosition))
+                    {
+                        this->currentView = new OptionsView(sf::Vector2f(size.x, size.y), this->gridSize, this->numBombs);
+                        this->viewType = ViewType::OPTIONS;
+                    }
+                }
                 break;
+            }
             case ViewType::OPTIONS:
+            {
+                OptionsView* optionsView = (OptionsView*)this->currentView;
+                if (event.mouseButton.button == sf::Mouse::Left)
+                {
+                    sf::Vector2f clickPosition = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
+                    if (optionsView->AddSizeClicked(clickPosition))
+                    {
+                        if (optionsView->setSize(this->gridSize.x + 1))
+                            this->gridSize += sf::Vector2u(1, 1);
+                        return;
+                    }
+                    if (optionsView->DecSizeClicked(clickPosition))
+                    {
+                        if (optionsView->setSize(this->gridSize.x - 1))
+                            this->gridSize -= sf::Vector2u(1, 1);
+                        return;
+                    }
+                    if (optionsView->AddBombClicked(clickPosition)) 
+                    {
+                        if (optionsView->setBomb(this->numBombs + 1))
+                            this->numBombs++;
+                        return;
+                    }
+                    if (optionsView->DecBombClicked(clickPosition))
+                    {
+                        if (optionsView->setBomb(this->numBombs - 1))
+                            this->numBombs--;
+                        return;
+                    }
+                    if (optionsView->MenuClicked(clickPosition))
+                    {
+                        this->currentView = new MenuView(sf::Vector2f(size.x, size.y));
+                        this->viewType = ViewType::MENU;
+                        return;
+                    }
+                }
                 break;
+            }
             case ViewType::MESSAGE:
             {
                 MessageView* messageView = (MessageView*)this->currentView;
@@ -93,12 +150,15 @@ private:
                     sf::Vector2f clickPosition = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
                     if (messageView->RestartClicked(clickPosition))
                     {
-                        this->currentView = new GameView(sf::Vector2u(10, 20), sf::Vector2f(size.x, size.y), 400, sf::Vector2f(size.x/2, size.y/2), 20);
+                        this->currentView = new GameView(sf::Vector2u(gridSize.x, gridSize.y), sf::Vector2f(size.x, size.y), size.x - 100, sf::Vector2f(size.x / 2, size.y / 2), this->numBombs);
                         this->viewType = ViewType::GAME;
+                        return;
                     }
                     else if (messageView->MainMenuClicked(clickPosition))
                     {
-                        std::cout << "Go to Menu" << std::endl;
+                        this->currentView = new MenuView(sf::Vector2f(size.x, size.y));
+                        this->viewType = ViewType::MENU;
+                        return;
                     }
                 }
                 break;
@@ -124,10 +184,16 @@ public:
         size_t width = size.x, height = size.y;
         window.create(sf::VideoMode(width, height), "Campo Minado", sf::Style::Close | sf::Style::Titlebar);
         
+        // Grid size and bomb number default initialization
+        this->gridSize = sf::Vector2u(18, 18);
+        this->numBombs = 30;
 
 
-        this->currentView = new GameView(sf::Vector2u(10, 20), sf::Vector2f(width, height), 400, sf::Vector2f(width/2, height/2), 20);
-        this->viewType = ViewType::GAME;
+        /*this->currentView = new GameView(sf::Vector2u(gridSize.x, gridSize.y), sf::Vector2f(size.x, size.y), size.x - 100, sf::Vector2f(size.x / 2, size.y / 2), 20);
+        this->viewType = ViewType::GAME;*/
+        // Initialize start view as Menu View
+        this->currentView = new MenuView(sf::Vector2f(size.x, size.y));
+        this->viewType = ViewType::MENU;
 
         while (window.isOpen())
         {
