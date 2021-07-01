@@ -24,6 +24,7 @@
   <ItemGroup>
     <ClInclude Include="src\Views\GameView.h" />
     <ClInclude Include="src\Views\MenuView.h" />
+    <ClInclude Include="src\Views\MessageView.h" />
     <ClInclude Include="src\Views\View.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

@@ -4,12 +4,14 @@
 #include <iostream>
 #include <Views/View.h>
 #include <Views/GameView.h>
+#include <Views/MessageView.h>
 #include <SFML/Graphics.hpp>
+
 
 class MineFieldApp 
 {
 private:
-// Window Properties
+/*  Window Properties */
     // Window Object
     sf::RenderWindow window;
     // Window Size
@@ -18,14 +20,17 @@ private:
     // The current view in the application
     View* currentView;
     // The current view type
-    enum ViewType { MENU, OPTIONS, GAME, GAMEOVER } 
-    viewType;
+    enum class ViewType
+    {
+        MENU, OPTIONS, GAME, MESSAGE
+    };
+    ViewType viewType;
 
-// Game Properties
+/*  Game Properties */
     // Number of bombs
-    size_t numBombs;
+    //size_t numBombs;
     // Size of the grid in number of cells
-    sf::Vector2u gridSize;
+    //sf::Vector2u gridSize;
 
     void ProcessEvent(sf::Event event) 
     {
@@ -36,11 +41,7 @@ private:
         {
             switch (viewType)
             {
-            case MENU:
-                break;
-            case OPTIONS:
-                break;
-            case GAME:
+            case ViewType::GAME:
             {
                 sf::Vector2u index;
                 GameView* gameView = (GameView*)this->currentView;
@@ -50,23 +51,58 @@ private:
                     if (event.mouseButton.button == sf::Mouse::Left)
                     {
                         // If player clicked on a bomb cell and it is not marked, then it is a Game Over
-                        if (!gameView->isMarked(index)) 
+                        if (!gameView->isMarked(index))
                         {
+                            // If the player clicked on a mined cell, then the MessageView with Game Over message appears.
                             if (gameView->isBomb(index))
-                                std::cout << "GAME OVER" << std::endl;
+                            {
+                                this->currentView = new MessageView(sf::Vector2f(size.x, size.y), "GAME OVER!");
+                                this->viewType = ViewType::MESSAGE;
+                                return;
+                            }
                             else
                                 gameView->OpenNode(index);
+
+                            // If the player cleared the last non-mined cell, then the MessageView with Victory message appears.
+                            if (gameView->victoryCondition())
+                            {
+                                this->currentView = new MessageView(sf::Vector2f(size.x, size.y), "You Win!");
+                                this->viewType = ViewType::MESSAGE;
+                                return;
+                            }
                         }
+                        return;
                     }
                     else if (event.mouseButton.button == sf::Mouse::Right)
                     {
                         gameView->ToggleMarkNode(index);
+                        return;
                     }
                 }
                 break;
             }
-            case GAMEOVER:
+            case ViewType::MENU:
                 break;
+            case ViewType::OPTIONS:
+                break;
+            case ViewType::MESSAGE:
+            {
+                MessageView* messageView = (MessageView*)this->currentView;
+                if (event.mouseButton.button == sf::Mouse::Left)
+                {
+                    sf::Vector2f clickPosition = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
+                    if (messageView->RestartClicked(clickPosition))
+                    {
+                        this->currentView = new GameView(sf::Vector2u(10, 20), sf::Vector2f(size.x, size.y), 400, sf::Vector2f(size.x/2, size.y/2), 20);
+                        this->viewType = ViewType::GAME;
+                    }
+                    else if (messageView->MainMenuClicked(clickPosition))
+                    {
+                        std::cout << "Go to Menu" << std::endl;
+                    }
+                }
+                break;
+            }
             default:
                 break;
             }
@@ -90,8 +126,8 @@ public:
         
 
 
-        this->currentView = new GameView(sf::Vector2u(10, 20), 400, sf::Vector2f(width/2, height/2), 20);
-        this->viewType = GAME;
+        this->currentView = new GameView(sf::Vector2u(10, 20), sf::Vector2f(width, height), 400, sf::Vector2f(width/2, height/2), 20);
+        this->viewType = ViewType::GAME;
 
         while (window.isOpen())
         {

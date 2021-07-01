@@ -12,6 +12,7 @@ private:
 /* Grid Attributes */
 	// Rectangle that act as the "container" of the grid
 	sf::RectangleShape gridRect;
+	
 	// The size of the grid in number of cells
 	sf::Vector2u gridSize;
 	
@@ -20,20 +21,34 @@ private:
 		sf::RectangleShape rect;
 		sf::Text nodeChar;
 		sf::Vector2f position;
-		int neighBombs;
-		bool bomb;
-		bool opened;
-		bool marked;
+		int neighBombs = 0;
+		bool bomb = false;
+		bool opened = false;
+		bool marked = false;
 	}* nodes;	// The pointer that will be initialized as the grid
 
 	// The number of bombs in this grid
 	float bombNumber;
 
 /* Stats Attributes */
+	// Rectangle Shape drawed in the bottom of the view as a frame to the text bellow
+	sf::RectangleShape bottomRect;
+	
+	// Text shape to render the text 'number of bombs marked / number of bombs' and 'elapsed time' in the bottom of the view
+	sf::Text bombsMarkedText;
+
 	// Time elapsed since the start of the game
-	sf::Time elapsedTime;
+	sf::Clock elapsedClock;
+	
 	// Bombs marked by the player
 	size_t bombsMarked;
+	
+	// The number of cells already opened. Used to check the victory condition
+	size_t cellsOpened;
+
+
+
+/* Utilities Methods */
 
 	// MACRO that calculate the index of an array based on a matrix indexation
 	// 'i' represents the line and 'j' the column
@@ -121,10 +136,10 @@ private:
 public:
 
 	// gridSize -> grid size in number of cells
-	// gridWindowSize -> grid size in the screen (pixels)
+	// gridFrameSize -> grid size in the screen (pixels)
 	// gridPosition -> the position of the grid on the screen
 	// bombNumber -> the number of bombs on the grid
-	GameView(sf::Vector2u gridSize, float gridWindowSize, sf::Vector2f gridPosition, int bombNumber) 
+	GameView(sf::Vector2u gridSize, sf::Vector2f windowSize, float gridFrameSize, sf::Vector2f gridPosition, int bombNumber) 
 	{
 		// Store the grid size (number of cells)
 		this->gridSize = gridSize;
@@ -133,24 +148,35 @@ public:
 		std::cout << "GridSize: " << gridSize.x * gridSize.y << std::endl;
 		// Store the number of bombs
 		this->bombNumber = bombNumber;
+		// Initialized the cellsOpened and bombsMarked counters
+		this->cellsOpened = this->bombsMarked =  0;
 		
 		// Initialize the rectangle that act as the grid container
-		gridRect.setSize(sf::Vector2f(gridWindowSize, gridWindowSize));
-		gridRect.setOrigin(gridWindowSize/2, gridWindowSize/2);	// Set the origin to the middle of the rectangle
+		gridRect.setSize(sf::Vector2f(gridFrameSize, gridFrameSize));
+		gridRect.setOrigin(gridFrameSize/2, gridFrameSize/2);	// Set the origin to the middle of the rectangle
 		gridRect.setPosition(gridPosition);
 		gridRect.setFillColor(sf::Color::Transparent);	// The rect is not filled. Only it's outline is rendered
 		gridRect.setOutlineColor(sf::Color::White);
 		gridRect.setOutlineThickness(4);
 
+		bottomRect.setSize(sf::Vector2f(windowSize.x, 50));
+		bottomRect.setOrigin(windowSize.x / 2, 25);
+		bottomRect.setPosition(windowSize.x / 2, windowSize.y - 25);
+		bottomRect.setFillColor(sf::Color(120, 120, 120));
+
 		sf::Font* textFont = new sf::Font();
 		textFont->loadFromFile("arial.ttf");
+
+		bombsMarkedText.setFont(*textFont);
+		bombsMarkedText.setCharacterSize(16);
+		bombsMarkedText.setPosition(50, 565);
 
 
 		this->PopulateBombs();	// Populate the grid with bombs
 		this->PopulateBombNeighbors();	// Populate the cells with the number of bomb neighbors
 
 		// Calculate the cell size to fit in the 
-		sf::Vector2f cellSize = sf::Vector2f(gridWindowSize / gridSize.x, gridWindowSize / gridSize.y);
+		sf::Vector2f cellSize = sf::Vector2f(gridFrameSize / gridSize.x, gridFrameSize / gridSize.y);
 		for (size_t i = 0; i < gridSize.y; i++)
 		{
 			for (size_t j = 0; j < gridSize.x; j++)
@@ -185,32 +211,47 @@ public:
 				node.nodeChar.setFillColor(sf::Color::Red);
 			}
 		}
+		elapsedClock = sf::Clock();
+		
 	}
 
 	// Return if there is bomb in the given index
 	bool isBomb(sf::Vector2u nodeIndex) { return nodes[convertIndex(nodeIndex.x, nodeIndex.y)].bomb; }
 	// Return if the node was already opened in the given index
 	bool isOpened(sf::Vector2u nodeIndex) { return nodes[convertIndex(nodeIndex.x, nodeIndex.y)].opened; }
-
+	// Return if the node is marked by the player. Tipically, this is used to not allow the player to click a marked node.
 	bool isMarked(sf::Vector2u nodeIndex) { return nodes[convertIndex(nodeIndex.x, nodeIndex.y)].marked; }
+	// Return if the victory condition is met. Checks if the number of opened cells is the number of clear cells
+	bool victoryCondition() { return cellsOpened == gridSize.x * gridSize.y - bombNumber; }
 
 	// Render the grid rectangle and its containing cells
 	void RenderView(sf::RenderWindow& window) override
 	{
+		// Get the time elapsed since the start of the game
+		sf::Time time = elapsedClock.getElapsedTime();
+
+		// Render the grid frame
 		window.draw(gridRect);
+		// Render the grid cells
 		for (size_t i = 0; i < gridSize.y; i++)
 		{
 			for (size_t j = 0; j < gridSize.x; j++)
 			{
+				// Get the node, it's rectangle shape and text shape, and render both.
 				GridNode& node = nodes[convertIndex(i,j)];
 				sf::RectangleShape& gridCell = node.rect;
 				sf::Text& numBombs = node.nodeChar;
 				window.draw(gridCell);
-				//if (node.opened)
-					window.draw(numBombs);
+				window.draw(numBombs);
 
 			}
 		}
+
+		std::string str = std::to_string(bombsMarked) + " / " + std::to_string((int)bombNumber) + "\tElapsed Time: " + std::to_string(time.asSeconds());
+		bombsMarkedText.setString(str);
+
+		window.draw(bottomRect);
+		window.draw(bombsMarkedText);
 		
 	}
 
@@ -243,10 +284,16 @@ public:
 
 
 		GridNode& node = nodes[convertIndex(i, j)];
-		if (node.opened || node.marked || node.bomb)
+		// If the node is opened or is a bomb, ignore. (clicking on bomb is handled by the MineFieldApp class
+		if (node.opened || node.bomb)
 			return;
+		
 		node.opened = true;
+		// Change the color of the rectangle to indicate the cell is open
 		node.rect.setFillColor(sf::Color(210, 210, 210));
+		
+		// Increment the number of cells opened
+		cellsOpened++;
 
 		if (node.neighBombs == 0) 
 		{
@@ -298,17 +345,19 @@ public:
 
 
 		GridNode& node = nodes[convertIndex(i, j)];
+		// If the node is opened, it can't be marked
 		if (node.opened)
 			return;
 
 
-		// If the node is not marked, 
+		// If the node is not marked, mark it with 'M'
 		if (!node.marked)
 		{
 			node.nodeChar.setString("M");
 			node.marked = true;
 			bombsMarked++;
 		}
+		// Otherwise, turn it blank
 		else
 		{
 			node.nodeChar.setString("");
