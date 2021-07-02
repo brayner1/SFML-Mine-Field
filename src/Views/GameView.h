@@ -4,6 +4,7 @@
 #include <string>
 #include <random>
 #include <set>
+#include <unordered_map>
 
 // Class that manages and render a grid of rectangle cells that can contain bombs
 // This class also implements the logics of the Mine Field Game
@@ -45,6 +46,7 @@ private:
 
 	// Time elapsed since the start of the game
 	sf::Clock elapsedClock;
+
 	// The bool that defines if the elapsed time will be updated when the view is rendered
 	bool updateClock = true;
 	
@@ -235,6 +237,8 @@ public:
 	bool isMarked(sf::Vector2u nodeIndex) { return nodes[convertIndex(nodeIndex.x, nodeIndex.y)].marked; }
 	// Return if the victory condition is met. Checks if the number of opened cells is the number of clear cells
 	bool victoryCondition() { return cellsOpened == gridSize.x * gridSize.y - bombNumber; }
+	// Return the number of opened cells
+	size_t numOpened() { return this->cellsOpened; }
 
 	// Calculate the index of a node in a given screen position. Return true in case the click was in one of the nodes, false otherwise
 	// The clicked node index is returned by the reference parameter 'nodeIndex'
@@ -363,6 +367,15 @@ public:
 
 			}
 		}
+	}
+
+	void ShowBomb(sf::Vector2u bombIndex)
+	{
+		int i = bombIndex.x; int j = bombIndex.y;
+		GridNode& node = nodes[convertIndex(i, j)];
+		if (!node.bomb)
+			return;
+		node.nodeChar.setString("X");
 	}
 
 	// Render the grid rectangle and its containing cells

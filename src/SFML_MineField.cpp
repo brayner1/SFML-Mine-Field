@@ -33,7 +33,12 @@ private:
     size_t numBombs;
     // Size of the grid in number of cells
     sf::Vector2u gridSize;
+    // The gain life if half grid opened power up toggle
+    bool powerupOn;
 
+    // This method process the polled event from the MainLoop.
+    // It is responsible for checking if the window is closed or if any interaction is made with the actual view.
+    // The possible interactions depends on the view type.
     void ProcessEvent(sf::Event event) 
     {
         if (event.type == sf::Event::Closed)
@@ -47,17 +52,25 @@ private:
             {
                 sf::Vector2u index;
                 GameView* gameView = (GameView*)this->currentView;
-                bool nodeClicked = gameView->NodeClicked(sf::Vector2f(event.mouseButton.x, event.mouseButton.y), index);
-                if (nodeClicked)
+                // Check if a node is clicked, assigning the node index if true
+                if (gameView->NodeClicked(sf::Vector2f(event.mouseButton.x, event.mouseButton.y), index))
                 {
                     if (event.mouseButton.button == sf::Mouse::Left)
                     {
+                        static bool extraLife = false;
                         // If player clicked on a bomb cell and it is not marked, then it is a Game Over
                         if (!gameView->isMarked(index))
                         {
                             // If the player clicked on a mined cell, then the MessageView with Game Over message appears after some time showing the bombs.
                             if (gameView->isBomb(index))
                             {
+                                if (extraLife)
+                                {
+                                    extraLife = false;
+                                    gameView->ShowBomb(index);
+                                    return;
+                                }
+
                                 // Show the bombs and render the view for 5 seconds
                                 gameView->ShowBombs();
                                 gameView->RenderViewForSecs(window, 5, sf::Color(160, 20, 20));
@@ -70,15 +83,27 @@ private:
                             }
                             // Otherwise, the cell is opened
                             else
+                            {
+                                size_t halfSize = ((gridSize.x * gridSize.y) / 2);
+                                size_t openedBefore = gameView->numOpened();
                                 gameView->OpenNode(index);
 
-                            // If the player cleared the last non-mined cell, then the MessageView with Victory message appears.
+                                // If the power Up mechanic is enabled, and the player has just opened >=half of the grid, then an extra life is enabled.
+                                if (powerupOn && gameView->numOpened() > halfSize && openedBefore < halfSize)
+                                {
+                                    extraLife = true;
+                                }
+
+                            }
+
+                            // If the player cleared the last non-mined cell, then the MessageView with Victory message appears after some time showing the bombs.
                             if (gameView->victoryCondition())
                             {
                                 // Show the bombs and render the view for 5 seconds
                                 gameView->ShowBombs();
                                 gameView->RenderViewForSecs(window, 5, sf::Color(20, 160, 20));
 
+                                // Delete the Game View and create the Message View with the Victory message.
                                 delete gameView;
                                 this->currentView = new MessageView(sf::Vector2f(size.x, size.y), "You Win!");
                                 this->viewType = ViewType::MESSAGE;
@@ -87,6 +112,7 @@ private:
                         }
                         return;
                     }
+                    // If clicked with the right mouse button, then it toggles on/off the cell marking (do nothing if the cell is already opened)
                     else if (event.mouseButton.button == sf::Mouse::Right)
                     {
                         gameView->ToggleMarkNode(index);
@@ -112,7 +138,7 @@ private:
                     else if (menuView->OptionsClicked(clickPosition))
                     {
                         delete menuView;
-                        this->currentView = new OptionsView(sf::Vector2f(size.x, size.y), this->gridSize, this->numBombs);
+                        this->currentView = new OptionsView(sf::Vector2f(size.x, size.y), this->gridSize, this->numBombs, this->powerupOn);
                         this->viewType = ViewType::OPTIONS;
                     }
                 }
@@ -127,7 +153,7 @@ private:
                     // Check if the AddSize button is clicked
                     if (optionsView->AddSizeClicked(clickPosition))
                     {
-                        // If it is, and the incremented size is valid, the increment is done
+                        // If it is, and the incremented in size is valid, the increment is done
                         if (optionsView->setSize(this->gridSize.x + 1))
                             this->gridSize += sf::Vector2u(1, 1);
                         return;
@@ -135,7 +161,7 @@ private:
                     // Check if the DecSize button is clicked
                     if (optionsView->DecSizeClicked(clickPosition))
                     {
-                        // If it is, and the decrement size is valid, the decrement is done
+                        // If it is, and the decrement in size is valid, the decrement is done
                         if (optionsView->setSize(this->gridSize.x - 1))
                             this->gridSize -= sf::Vector2u(1, 1);
                         return;
@@ -143,7 +169,7 @@ private:
                     // Check if the AddBomb button is clicked
                     if (optionsView->AddBombClicked(clickPosition)) 
                     {
-                        // If it is, and the increment size is valid, the increment is done
+                        // If it is, and the increment number of bombs is valid, the increment is done
                         if (optionsView->setBomb(this->numBombs + 1))
                             this->numBombs++;
                         return;
@@ -151,9 +177,17 @@ private:
                     // Check if the DecBomb button is clicked
                     if (optionsView->DecBombClicked(clickPosition))
                     {
-                        // If it is, and the decrement size is valid, the decrement is done
+                        // If it is, and the decrement number of bombs is valid, the decrement is done
                         if (optionsView->setBomb(this->numBombs - 1))
                             this->numBombs--;
+                        return;
+                    }
+                    // Check if the Power Up check button is clicked
+                    if (optionsView->powerupClicked(clickPosition))
+                    {
+                        // If it is, then the powerup mechanic is toggle On/Off
+                        optionsView->setPowerUp(!this->powerupOn);
+                        this->powerupOn = !this->powerupOn;
                         return;
                     }
                     // Check if the Menu button is clicked
@@ -204,34 +238,27 @@ private:
 
 public:
     MineFieldApp(sf::Vector2u size) : size(size) 
-    { 
-
-    }
-
-    int MainLoop() {
-        // Clock for measuring deltaTime in each frame
-        sf::Clock clock;
-
+    {
         // Window Creation
         size_t width = size.x, height = size.y;
         window.create(sf::VideoMode(width, height), "Campo Minado", sf::Style::Close | sf::Style::Titlebar);
-        
-        // Grid size and bomb number default initialization
+
+        // Grid size, bomb number and powerup default initialization
         this->gridSize = sf::Vector2u(18, 18);
         this->numBombs = 30;
+        this->powerupOn = true;
 
 
-        /*this->currentView = new GameView(sf::Vector2u(gridSize.x, gridSize.y), sf::Vector2f(size.x, size.y), size.x - 100, sf::Vector2f(size.x / 2, size.y / 2), 20);
-        this->viewType = ViewType::GAME;*/
         // Initialize start view as Menu View
         this->currentView = new MenuView(sf::Vector2f(size.x, size.y));
         this->viewType = ViewType::MENU;
+    }
 
+    // Method that executes the application main loop
+    int MainLoop() 
+    {
         while (window.isOpen())
         {
-            // Calculate the time between each frame
-            sf::Time deltaTime = clock.restart();
-
             sf::Event event;
             while (window.pollEvent(event))
             {
@@ -247,21 +274,10 @@ public:
         }
         return 0;
     }
-
-    // Private Methods
-private:
-
 };
 
 int main()
 {
-    
-    //size_t circleSize = (width < height) ? width / 2 : height / 2;
-    //sf::CircleShape shape(circleSize);
-    //shape.setPosition(width/2 - circleSize, 0);
-    //std::cout << shape.getPosition().x << std::endl;
-    //shape.setFillColor(sf::Color::White);
-
     MineFieldApp app(sf::Vector2u(500, 600));
 
     return app.MainLoop();

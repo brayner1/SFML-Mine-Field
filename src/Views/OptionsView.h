@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <Views/View.h>
 #include <SFML/Graphics.hpp>
 
@@ -34,6 +34,12 @@ class OptionsView : public View
 	sf::RectangleShape decBombButton;
 	sf::Text decBombText;
 
+	/* Powerup Check button */
+	bool powerupOn;
+	sf::Text pwupOption;
+	sf::RectangleShape pwupButton;
+	sf::Text pwupText;
+
 /* Menu Button */
 	sf::RectangleShape menuButton;
 	sf::Text menuText;
@@ -45,10 +51,11 @@ public:
 	}
 
 
-	OptionsView(sf::Vector2f windowSize, sf::Vector2u gridSize, size_t bombNumber)
+	OptionsView(sf::Vector2f windowSize, sf::Vector2u gridSize, size_t bombNumber, bool powerUp)
 	{
 		this->gridSize = gridSize.x;
 		this->nBombs = bombNumber;
+		this->powerupOn = powerUp;
 		textFont = new sf::Font();
 		textFont->loadFromFile("arial.ttf");
 
@@ -57,7 +64,7 @@ public:
 		optionsTitle.setCharacterSize(50);
 		optionsTitle.setString("Options");
 		optionsTitle.setOrigin(optionsTitle.getLocalBounds().width / 2, optionsTitle.getLocalBounds().height / 2);
-		optionsTitle.setPosition(windowSize.x / 2, windowSize.y / 4);
+		optionsTitle.setPosition(windowSize.x / 2, windowSize.y / 8);
 		optionsTitle.setFillColor(sf::Color(120, 50, 50));
 
 
@@ -68,7 +75,7 @@ public:
 			sizeOption.setCharacterSize(16);
 			sizeOption.setString("Field Size");
 			sizeOption.setOrigin(sizeOption.getLocalBounds().width / 2, sizeOption.getLocalBounds().height / 2);
-			sizeOption.setPosition(windowSize.x / 2, 1.2f * windowSize.y / 3);
+			sizeOption.setPosition(windowSize.x / 2, windowSize.y / 4.5f);
 			sizeOption.setFillColor(sf::Color::Black);
 
 			// Initialize size value text
@@ -76,33 +83,33 @@ public:
 			sizeValue.setCharacterSize(16);
 			sizeValue.setString(std::to_string(this->gridSize));
 			sizeValue.setOrigin(sizeValue.getLocalBounds().width / 2, sizeValue.getLocalBounds().height / 2);
-			sizeValue.setPosition(windowSize.x / 2, 1.5f * windowSize.y / 3);
+			sizeValue.setPosition(windowSize.x / 2, 1.2f * windowSize.y / 4);
 			sizeValue.setFillColor(sf::Color::Black);
 
 			// Initialize the increase size button
 			addSizeButton.setSize(sf::Vector2f(windowSize.x / 10, windowSize.y / 10));
 			addSizeButton.setOrigin(windowSize.x / 20, windowSize.y / 20);
-			addSizeButton.setPosition(3.5f * windowSize.x / 5, 1.5f * windowSize.y / 3);
+			addSizeButton.setPosition(3.5f * windowSize.x / 5, 1.2f * windowSize.y / 4);
 			addSizeButton.setFillColor(sf::Color(0, 180, 0));
 
 			addSizeText.setFont(*textFont);
 			addSizeText.setCharacterSize(32);
 			addSizeText.setString("+");
 			addSizeText.setOrigin(addSizeText.getLocalBounds().width / 2, addSizeText.getLocalBounds().height / 2);
-			addSizeText.setPosition(3.5f * windowSize.x / 5, 1.45f * windowSize.y / 3);
+			addSizeText.setPosition(3.5f * windowSize.x / 5, 1.15f * windowSize.y / 4);
 			addSizeText.setFillColor(sf::Color::White);
 
 			// Initialize the decrease size button
 			decSizeButton.setSize(sf::Vector2f(windowSize.x / 10, windowSize.y / 10));
 			decSizeButton.setOrigin(windowSize.x / 20, windowSize.y / 20);
-			decSizeButton.setPosition(1.5f * windowSize.x / 5, 1.5f * windowSize.y / 3);
+			decSizeButton.setPosition(1.5f * windowSize.x / 5, 1.2f * windowSize.y / 4);
 			decSizeButton.setFillColor(sf::Color::Red);
 
 			decSizeText.setFont(*textFont);
 			decSizeText.setCharacterSize(32);
 			decSizeText.setString("-");
 			decSizeText.setOrigin(decSizeText.getLocalBounds().width / 2, decSizeText.getLocalBounds().height / 2);
-			decSizeText.setPosition(1.5f * windowSize.x / 5, 1.43f * windowSize.y / 3);
+			decSizeText.setPosition(1.5f * windowSize.x / 5, 1.15f * windowSize.y / 4);
 			decSizeText.setFillColor(sf::Color::White);
 		}
 /* Bomb Options Initialization */
@@ -112,7 +119,7 @@ public:
 			bombOption.setCharacterSize(16);
 			bombOption.setString("Mines Number");
 			bombOption.setOrigin(bombOption.getLocalBounds().width / 2, bombOption.getLocalBounds().height / 2);
-			bombOption.setPosition(windowSize.x / 2, 1.8f * windowSize.y / 3);
+			bombOption.setPosition(windowSize.x / 2, 1.8f * windowSize.y / 4.2f);
 			bombOption.setFillColor(sf::Color::Black);
 
 			// Initialize size value text
@@ -120,35 +127,68 @@ public:
 			bombValue.setCharacterSize(16);
 			bombValue.setString(std::to_string(this->nBombs));
 			bombValue.setOrigin(bombValue.getLocalBounds().width / 2, bombValue.getLocalBounds().height / 2);
-			bombValue.setPosition(windowSize.x / 2, 2.1f * windowSize.y / 3);
+			bombValue.setPosition(windowSize.x / 2, 2.1f * windowSize.y / 4);
 			bombValue.setFillColor(sf::Color::Black);
 
 			// Initialize the increase size button
 			addBombButton.setSize(sf::Vector2f(windowSize.x / 10, windowSize.y / 10));
 			addBombButton.setOrigin(windowSize.x / 20, windowSize.y / 20);
-			addBombButton.setPosition(3.5f * windowSize.x / 5, 2.1f * windowSize.y / 3);
+			addBombButton.setPosition(3.5f * windowSize.x / 5, 2.1f * windowSize.y / 4);
 			addBombButton.setFillColor(sf::Color(0, 180, 0));
 
 			addBombText.setFont(*textFont);
 			addBombText.setCharacterSize(32);
 			addBombText.setString("+");
 			addBombText.setOrigin(addBombText.getLocalBounds().width / 2, addBombText.getLocalBounds().height / 2);
-			addBombText.setPosition(3.5f * windowSize.x / 5, 2.05f * windowSize.y / 3);
+			addBombText.setPosition(3.5f * windowSize.x / 5, 2.05f * windowSize.y / 4);
 			addBombText.setFillColor(sf::Color::White);
 
 			// Initialize the decrease size button
 			decBombButton.setSize(sf::Vector2f(windowSize.x / 10, windowSize.y / 10));
 			decBombButton.setOrigin(windowSize.x / 20, windowSize.y / 20);
-			decBombButton.setPosition(1.5f * windowSize.x / 5, 2.1f * windowSize.y / 3);
+			decBombButton.setPosition(1.5f * windowSize.x / 5, 2.1f * windowSize.y / 4);
 			decBombButton.setFillColor(sf::Color::Red);
 
 			decBombText.setFont(*textFont);
 			decBombText.setCharacterSize(32);
 			decBombText.setString("-");
 			decBombText.setOrigin(decBombText.getLocalBounds().width / 2, decBombText.getLocalBounds().height / 2);
-			decBombText.setPosition(1.5f * windowSize.x / 5, 2.05f * windowSize.y / 3);
+			decBombText.setPosition(1.5f * windowSize.x / 5, 2.05f * windowSize.y / 4);
 			decBombText.setFillColor(sf::Color::White);
 		}
+/* Powerup Check Initialization */
+		{
+			pwupOption.setFont(*textFont);
+			pwupOption.setCharacterSize(16);
+			pwupOption.setString("Gain one chance\nwhen bomb clicked.");
+			pwupOption.setOrigin(pwupOption.getLocalBounds().width / 2, pwupOption.getLocalBounds().height / 2);
+			pwupOption.setPosition(windowSize.x / 2.5f, 0.68f * windowSize.y);
+			pwupOption.setFillColor(sf::Color::Black);
+
+			if (this->powerupOn)
+			{
+				this->pwupText.setString("Yes");
+				pwupButton.setFillColor(sf::Color(0, 200, 0));
+			}
+			else
+			{
+				this->pwupText.setString("No");
+				pwupButton.setFillColor(sf::Color(200, 0, 0));
+			}
+
+			pwupButton.setSize(sf::Vector2f(windowSize.x / 10, windowSize.y / 10));
+			pwupButton.setOrigin(windowSize.x / 20, windowSize.y / 20);
+			pwupButton.setPosition(3.5f * windowSize.x / 5, 0.68f * windowSize.y);
+
+			pwupText.setFont(*textFont);
+			pwupText.setCharacterSize(16);
+			pwupText.setOrigin(pwupText.getLocalBounds().width / 2, pwupText.getLocalBounds().height / 2);
+			pwupText.setPosition(3.5f * windowSize.x / 5, 0.68f * windowSize.y);
+			pwupText.setFillColor(sf::Color::White);
+
+			
+		}
+
 /* Menu Button Initialization*/
 		{
 			menuButton.setSize(sf::Vector2f(windowSize.x / 3, windowSize.y / 10));
@@ -173,6 +213,8 @@ public:
 	bool AddBombClicked(sf::Vector2f clickPosition) { return addBombButton.getGlobalBounds().contains(clickPosition); }
 	// Return true if the DecBinb button is clicked
 	bool DecBombClicked(sf::Vector2f clickPosition) { return decBombButton.getGlobalBounds().contains(clickPosition); }
+	// Return true if the Power Up check button is clicked
+	bool powerupClicked(sf::Vector2f clickPosition) { return pwupButton.getGlobalBounds().contains(clickPosition); }
 	// Return true if the Menu button is clicked
 	bool MenuClicked(sf::Vector2f clickPosition) { return menuButton.getGlobalBounds().contains(clickPosition); }
 
@@ -197,6 +239,21 @@ public:
 		return true;
 	}
 
+	void setPowerUp(bool status)
+	{
+		this->powerupOn = status;
+		if (status)
+		{
+			this->pwupText.setString("Yes");
+			pwupButton.setFillColor(sf::Color(0, 200, 0));
+		}
+		else
+		{
+			this->pwupText.setString("No");
+			pwupButton.setFillColor(sf::Color(200, 0, 0));
+		}
+	}
+
 	// Draw the Main Menu elements
 	void RenderView(sf::RenderWindow& window) override
 	{
@@ -217,6 +274,10 @@ public:
 		window.draw(addBombText);
 		window.draw(decBombButton);
 		window.draw(decBombText);
+
+		window.draw(pwupOption);
+		window.draw(pwupButton);
+		window.draw(pwupText);
 
 		window.draw(menuButton);
 		window.draw(menuText);
