@@ -2,7 +2,11 @@
 #include <Views/View.h>
 #include <SFML/Graphics.hpp>
 
-class OptionsView : public View {
+class OptionsView : public View 
+{
+	// Font used to draw texts
+	sf::Font* textFont;
+
 	// Message to be Displayed
 	sf::Text optionsTitle;
 
@@ -35,11 +39,17 @@ class OptionsView : public View {
 	sf::Text menuText;
 public:
 
+	~OptionsView()
+	{
+		delete textFont;
+	}
+
+
 	OptionsView(sf::Vector2f windowSize, sf::Vector2u gridSize, size_t bombNumber)
 	{
 		this->gridSize = gridSize.x;
 		this->nBombs = bombNumber;
-		sf::Font* textFont = new sf::Font();
+		textFont = new sf::Font();
 		textFont->loadFromFile("arial.ttf");
 
 		// Initialize the Menu Title text

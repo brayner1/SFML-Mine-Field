@@ -15,6 +15,9 @@ private:
 	
 	// The size of the grid in number of cells
 	sf::Vector2u gridSize;
+
+	// The font used to draw texts
+	sf::Font* textFont;
 	
 	// The structure that defines the grid nodes
 	struct GridNode{
@@ -25,7 +28,10 @@ private:
 		bool bomb = false;
 		bool opened = false;
 		bool marked = false;
-	}* nodes;	// The pointer that will be initialized as the grid
+	};	
+	// The unique pointer that will be initialized as the grid
+	// the std::unique_ptr class ensures that the pointer/array is deallocated after the unique_ptr is destroyed (in this case, when this view is destroyed);
+	std::unique_ptr<GridNode[]> nodes; 
 
 	// The number of bombs in this grid
 	float bombNumber;
@@ -39,6 +45,8 @@ private:
 
 	// Time elapsed since the start of the game
 	sf::Clock elapsedClock;
+	// The bool that defines if the elapsed time will be updated when the view is rendered
+	bool updateClock = true;
 	
 	// Bombs marked by the player
 	size_t cellsMarked;
@@ -135,7 +143,13 @@ private:
 
 public:
 
+	~GameView() 
+	{
+		delete textFont;
+	}
+
 	// gridSize -> grid size in number of cells
+	// windowSize -> the size of the window the grid is being placed
 	// gridFrameSize -> grid size in the screen (pixels)
 	// gridPosition -> the position of the grid on the screen
 	// bombNumber -> the number of bombs on the grid
@@ -144,7 +158,7 @@ public:
 		// Store the grid size (number of cells)
 		this->gridSize = gridSize;
 		// Allocate the grid array
-		this->nodes = new GridNode[gridSize.x * gridSize.y];
+		this->nodes = std::unique_ptr<GridNode[]>(new GridNode[gridSize.x * gridSize.y]);
 		// Store the number of bombs
 		this->bombNumber = bombNumber;
 		// Initialized the cellsOpened and cellsMarked counters
@@ -163,7 +177,7 @@ public:
 		bottomRect.setPosition(windowSize.x / 2, windowSize.y - 25);
 		bottomRect.setFillColor(sf::Color(120, 120, 120));
 
-		sf::Font* textFont = new sf::Font();
+		textFont = new sf::Font();
 		textFont->loadFromFile("arial.ttf");
 
 		bombsMarkedText.setFont(*textFont);
@@ -200,7 +214,6 @@ public:
 
 				// Initialize the text shape which will render the number of adjecent bombs, if there is any, when the cell is opened by the player
 				std::string str = "";
-				str = node.bomb ? "99" : str;
 				node.nodeChar.setString(str);
 				node.nodeChar.setFont(*textFont);
 				float charSize = std::floor(std::min(cellSize.x / 1.4f, cellSize.y / 1.4f)); // Calculate the character size to fit in the cell
@@ -222,37 +235,6 @@ public:
 	bool isMarked(sf::Vector2u nodeIndex) { return nodes[convertIndex(nodeIndex.x, nodeIndex.y)].marked; }
 	// Return if the victory condition is met. Checks if the number of opened cells is the number of clear cells
 	bool victoryCondition() { return cellsOpened == gridSize.x * gridSize.y - bombNumber; }
-
-	// Render the grid rectangle and its containing cells
-	void RenderView(sf::RenderWindow& window) override
-	{
-		// Get the time elapsed since the start of the game
-		sf::Time time = elapsedClock.getElapsedTime();
-
-		// Render the grid frame
-		window.draw(gridRect);
-		// Render the grid cells
-		for (size_t i = 0; i < gridSize.y; i++)
-		{
-			for (size_t j = 0; j < gridSize.x; j++)
-			{
-				// Get the node, it's rectangle shape and text shape, and render both.
-				GridNode& node = nodes[convertIndex(i,j)];
-				sf::RectangleShape& gridCell = node.rect;
-				sf::Text& numBombs = node.nodeChar;
-				window.draw(gridCell);
-				window.draw(numBombs);
-
-			}
-		}
-
-		std::string str = std::to_string(cellsMarked) + " / " + std::to_string((int)bombNumber) + "\tElapsed Time: " + std::to_string(time.asSeconds());
-		bombsMarkedText.setString(str);
-
-		window.draw(bottomRect);
-		window.draw(bombsMarkedText);
-		
-	}
 
 	// Calculate the index of a node in a given screen position. Return true in case the click was in one of the nodes, false otherwise
 	// The clicked node index is returned by the reference parameter 'nodeIndex'
@@ -342,7 +324,7 @@ public:
 		// Get the line and column, where 'nodeIndex.x' is actually the line and 'nodeIndex.y' the column
 		size_t i = nodeIndex.x, j = nodeIndex.y;
 
-
+		
 		GridNode& node = nodes[convertIndex(i, j)];
 		// If the node is opened, it can't be marked
 		if (node.opened)
@@ -363,7 +345,88 @@ public:
 			node.marked = false;
 			cellsMarked--;
 		}
+	}
 
+	// Switch the texts of the bomb cells to show an 'X' in it's place, revealing their locations
+	void ShowBombs() 
+	{
+		for (size_t i = 0; i < gridSize.y; i++)
+		{
+			for (size_t j = 0; j < gridSize.x; j++)
+			{
+				GridNode& node = nodes[convertIndex(i, j)];
+				if (node.bomb)
+				{
+					sf::Text& nodeChar = node.nodeChar;
+					node.nodeChar.setString("X");
+				}
+
+			}
+		}
+	}
+
+	// Render the grid rectangle and its containing cells
+	void RenderView(sf::RenderWindow& window) override
+	{
+		// Render the grid frame
+		window.draw(gridRect);
+		// Render the grid cells
+		for (size_t i = 0; i < gridSize.y; i++)
+		{
+			for (size_t j = 0; j < gridSize.x; j++)
+			{
+				// Get the node, it's rectangle shape and text shape, and render both.
+				GridNode& node = nodes[convertIndex(i, j)];
+				sf::RectangleShape& gridCell = node.rect;
+				sf::Text& nodeChar = node.nodeChar;
+				window.draw(gridCell);
+				window.draw(nodeChar);
+
+			}
+		}
+		// Get the time elapsed since the start of the game
+		sf::Time time = elapsedClock.getElapsedTime();
+
+		if (this->updateClock)
+		{
+			std::string str = std::to_string(cellsMarked) + " / " + std::to_string((int)bombNumber) + "\tElapsed Time: " + std::to_string(time.asSeconds());
+			bombsMarkedText.setString(str);
+		}
+
+		window.draw(bottomRect);
+		window.draw(bombsMarkedText);
+
+	}
+
+	// Function used to render this view exclusively for 'seconds' seconds.
+	// For the time this function is executed, the logic of the application is not processed.
+	// It can be skiped with a left click.
+	void RenderViewForSecs(sf::RenderWindow& window, float seconds, sf::Color bgColor)
+	{
+		// The clock used to render the elapsed time in the screen is disabled
+		this->updateClock = false;
+
+		// This clock is used to calculate the time the view is rendered
+		sf::Clock clock;
+		// Render the view for 'seconds' seconds, stopping if the window is closed or the player click in the screen
+		while (clock.getElapsedTime().asSeconds() < seconds && window.isOpen())
+		{
+			sf::Event event;
+			while (window.pollEvent(event))
+			{
+				if (event.type == sf::Event::Closed)
+					window.close();
+
+				// If the left mouse button is clicked, the view will skip the rendering for seconds
+				// It does that by setting the variable 'seconds' to 0, forcing the exit of the loop
+				if (event.type == sf::Event::MouseButtonPressed)
+					if (event.mouseButton.button == sf::Mouse::Left)
+						seconds = 0;
+			}
+			window.clear(bgColor);
+			this->RenderView(window);
+			window.display();
+		}
 
 	}
 };

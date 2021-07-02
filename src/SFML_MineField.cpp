@@ -55,9 +55,15 @@ private:
                         // If player clicked on a bomb cell and it is not marked, then it is a Game Over
                         if (!gameView->isMarked(index))
                         {
-                            // If the player clicked on a mined cell, then the MessageView with Game Over message appears.
+                            // If the player clicked on a mined cell, then the MessageView with Game Over message appears after some time showing the bombs.
                             if (gameView->isBomb(index))
                             {
+                                // Show the bombs and render the view for 5 seconds
+                                gameView->ShowBombs();
+                                gameView->RenderViewForSecs(window, 5, sf::Color(160, 20, 20));
+
+                                // Delete the Game View and create the Message View with the Game Over message.
+                                delete gameView;
                                 this->currentView = new MessageView(sf::Vector2f(size.x, size.y), "GAME OVER!");
                                 this->viewType = ViewType::MESSAGE;
                                 return;
@@ -69,6 +75,11 @@ private:
                             // If the player cleared the last non-mined cell, then the MessageView with Victory message appears.
                             if (gameView->victoryCondition())
                             {
+                                // Show the bombs and render the view for 5 seconds
+                                gameView->ShowBombs();
+                                gameView->RenderViewForSecs(window, 5, sf::Color(20, 160, 20));
+
+                                delete gameView;
                                 this->currentView = new MessageView(sf::Vector2f(size.x, size.y), "You Win!");
                                 this->viewType = ViewType::MESSAGE;
                                 return;
@@ -90,13 +101,17 @@ private:
                 if (event.mouseButton.button == sf::Mouse::Left)
                 {
                     sf::Vector2f clickPosition = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
+                    // If clicked on the Play button, then the game is started
                     if (menuView->PlayClicked(clickPosition)) 
                     {
+                        delete menuView;
                         this->currentView = new GameView(sf::Vector2u(gridSize.x, gridSize.y), sf::Vector2f(size.x, size.y), size.x - 100, sf::Vector2f(size.x / 2, size.y / 2), this->numBombs);
                         this->viewType = ViewType::GAME;
                     }
+                    // If clicked in the Options button, then the Options view is started
                     else if (menuView->OptionsClicked(clickPosition))
                     {
+                        delete menuView;
                         this->currentView = new OptionsView(sf::Vector2f(size.x, size.y), this->gridSize, this->numBombs);
                         this->viewType = ViewType::OPTIONS;
                     }
@@ -109,32 +124,43 @@ private:
                 if (event.mouseButton.button == sf::Mouse::Left)
                 {
                     sf::Vector2f clickPosition = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
+                    // Check if the AddSize button is clicked
                     if (optionsView->AddSizeClicked(clickPosition))
                     {
+                        // If it is, and the incremented size is valid, the increment is done
                         if (optionsView->setSize(this->gridSize.x + 1))
                             this->gridSize += sf::Vector2u(1, 1);
                         return;
                     }
+                    // Check if the DecSize button is clicked
                     if (optionsView->DecSizeClicked(clickPosition))
                     {
+                        // If it is, and the decrement size is valid, the decrement is done
                         if (optionsView->setSize(this->gridSize.x - 1))
                             this->gridSize -= sf::Vector2u(1, 1);
                         return;
                     }
+                    // Check if the AddBomb button is clicked
                     if (optionsView->AddBombClicked(clickPosition)) 
                     {
+                        // If it is, and the increment size is valid, the increment is done
                         if (optionsView->setBomb(this->numBombs + 1))
                             this->numBombs++;
                         return;
                     }
+                    // Check if the DecBomb button is clicked
                     if (optionsView->DecBombClicked(clickPosition))
                     {
+                        // If it is, and the decrement size is valid, the decrement is done
                         if (optionsView->setBomb(this->numBombs - 1))
                             this->numBombs--;
                         return;
                     }
+                    // Check if the Menu button is clicked
                     if (optionsView->MenuClicked(clickPosition))
                     {
+                        // If it is, then the view is changed to the MenuView
+                        delete optionsView;
                         this->currentView = new MenuView(sf::Vector2f(size.x, size.y));
                         this->viewType = ViewType::MENU;
                         return;
@@ -148,14 +174,20 @@ private:
                 if (event.mouseButton.button == sf::Mouse::Left)
                 {
                     sf::Vector2f clickPosition = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
+                    // Check if the Restart button is clicked
                     if (messageView->RestartClicked(clickPosition))
                     {
+                        // If it is, then the view is changed to the GameView and the game is started
+                        delete messageView;
                         this->currentView = new GameView(sf::Vector2u(gridSize.x, gridSize.y), sf::Vector2f(size.x, size.y), size.x - 100, sf::Vector2f(size.x / 2, size.y / 2), this->numBombs);
                         this->viewType = ViewType::GAME;
                         return;
                     }
+                    // Check if the Main Menu button is clicked
                     else if (messageView->MainMenuClicked(clickPosition))
                     {
+                        // If it is, then the view is changed to the MenuView
+                        delete messageView;
                         this->currentView = new MenuView(sf::Vector2f(size.x, size.y));
                         this->viewType = ViewType::MENU;
                         return;

@@ -4,6 +4,9 @@
 
 class MenuView final : public View
 {
+	// Font used to draw texts
+	sf::Font* textFont;
+
 	// Message to be Displayed
 	sf::Text menuTitle;
 
@@ -17,9 +20,14 @@ class MenuView final : public View
 
 public:
 
+	~MenuView()
+	{
+		delete textFont;
+	}
+
 	MenuView(sf::Vector2f windowSize)
 	{
-		sf::Font* textFont = new sf::Font();
+		textFont = new sf::Font();
 		textFont->loadFromFile("arial.ttf");
 
 		// Initialize the Menu Title text

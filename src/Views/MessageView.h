@@ -4,6 +4,9 @@
 class MessageView : public View
 {
 private:
+	// Font used to draw texts
+	sf::Font* textFont;
+
 	// Message to be Displayed
 	sf::Text message;
 
@@ -17,9 +20,14 @@ private:
 
 public:
 
+	~MessageView()
+	{
+		delete textFont;
+	}
+
 	MessageView(sf::Vector2f windowSize, std::string messageStr, sf::Color color = sf::Color::Black) 
 	{
-		sf::Font* textFont = new sf::Font();
+		textFont = new sf::Font();
 		textFont->loadFromFile("arial.ttf");
 
 		// Initialize the message text
