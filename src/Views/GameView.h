@@ -236,9 +236,9 @@ public:
 	// Return if the node is marked by the player. Tipically, this is used to not allow the player to click a marked node.
 	bool isMarked(sf::Vector2u nodeIndex) { return nodes[convertIndex(nodeIndex.x, nodeIndex.y)].marked; }
 	// Return if the victory condition is met. Checks if the number of opened cells is the number of clear cells
-	bool victoryCondition() { return cellsOpened == gridSize.x * gridSize.y - bombNumber; }
+	bool VictoryCondition() { return cellsOpened == gridSize.x * gridSize.y - bombNumber; }
 	// Return the number of opened cells
-	size_t numOpened() { return this->cellsOpened; }
+	size_t NumOpened() { return this->cellsOpened; }
 
 	// Calculate the index of a node in a given screen position. Return true in case the click was in one of the nodes, false otherwise
 	// The clicked node index is returned by the reference parameter 'nodeIndex'

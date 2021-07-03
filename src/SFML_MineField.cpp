@@ -85,11 +85,11 @@ private:
                             else
                             {
                                 size_t halfSize = ((gridSize.x * gridSize.y) / 2);
-                                size_t openedBefore = gameView->numOpened();
+                                size_t openedBefore = gameView->NumOpened();
                                 gameView->OpenNode(index);
 
                                 // If the power Up mechanic is enabled, and the player has just opened >=half of the grid, then an extra life is enabled.
-                                if (powerupOn && gameView->numOpened() > halfSize && openedBefore < halfSize)
+                                if (powerupOn && gameView->NumOpened() > halfSize && openedBefore < halfSize)
                                 {
                                     extraLife = true;
                                 }
@@ -97,7 +97,7 @@ private:
                             }
 
                             // If the player cleared the last non-mined cell, then the MessageView with Victory message appears after some time showing the bombs.
-                            if (gameView->victoryCondition())
+                            if (gameView->VictoryCondition())
                             {
                                 // Show the bombs and render the view for 5 seconds
                                 gameView->ShowBombs();
@@ -154,7 +154,7 @@ private:
                     if (optionsView->AddSizeClicked(clickPosition))
                     {
                         // If it is, and the incremented in size is valid, the increment is done
-                        if (optionsView->setSize(this->gridSize.x + 1))
+                        if (optionsView->SetSize(this->gridSize.x + 1))
                             this->gridSize += sf::Vector2u(1, 1);
                         return;
                     }
@@ -162,7 +162,7 @@ private:
                     if (optionsView->DecSizeClicked(clickPosition))
                     {
                         // If it is, and the decrement in size is valid, the decrement is done
-                        if (optionsView->setSize(this->gridSize.x - 1))
+                        if (optionsView->SetSize(this->gridSize.x - 1))
                             this->gridSize -= sf::Vector2u(1, 1);
                         return;
                     }
@@ -170,7 +170,7 @@ private:
                     if (optionsView->AddBombClicked(clickPosition)) 
                     {
                         // If it is, and the increment number of bombs is valid, the increment is done
-                        if (optionsView->setBomb(this->numBombs + 1))
+                        if (optionsView->SetNBombs(this->numBombs + 1))
                             this->numBombs++;
                         return;
                     }
@@ -178,15 +178,15 @@ private:
                     if (optionsView->DecBombClicked(clickPosition))
                     {
                         // If it is, and the decrement number of bombs is valid, the decrement is done
-                        if (optionsView->setBomb(this->numBombs - 1))
+                        if (optionsView->SetNBombs(this->numBombs - 1))
                             this->numBombs--;
                         return;
                     }
                     // Check if the Power Up check button is clicked
-                    if (optionsView->powerupClicked(clickPosition))
+                    if (optionsView->PowerUpClicked(clickPosition))
                     {
                         // If it is, then the powerup mechanic is toggle On/Off
-                        optionsView->setPowerUp(!this->powerupOn);
+                        optionsView->SetPowerUp(!this->powerupOn);
                         this->powerupOn = !this->powerupOn;
                         return;
                     }
@@ -241,7 +241,8 @@ public:
     {
         // Window Creation
         size_t width = size.x, height = size.y;
-        window.create(sf::VideoMode(width, height), "Campo Minado", sf::Style::Close | sf::Style::Titlebar);
+        window.create(sf::VideoMode(width, height), "Mine Field", sf::Style::Close | sf::Style::Titlebar);
+        window.setFramerateLimit(30);
 
         // Grid size, bomb number and powerup default initialization
         this->gridSize = sf::Vector2u(18, 18);

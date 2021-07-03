@@ -214,12 +214,12 @@ public:
 	// Return true if the DecBinb button is clicked
 	bool DecBombClicked(sf::Vector2f clickPosition) { return decBombButton.getGlobalBounds().contains(clickPosition); }
 	// Return true if the Power Up check button is clicked
-	bool powerupClicked(sf::Vector2f clickPosition) { return pwupButton.getGlobalBounds().contains(clickPosition); }
+	bool PowerUpClicked(sf::Vector2f clickPosition) { return pwupButton.getGlobalBounds().contains(clickPosition); }
 	// Return true if the Menu button is clicked
 	bool MenuClicked(sf::Vector2f clickPosition) { return menuButton.getGlobalBounds().contains(clickPosition); }
 
 	// Set the new grid size value if the new size does not generate a grid with more bomb than cells
-	bool setSize(size_t size) 
+	bool SetSize(size_t size) 
 	{ 
 		// If the new size is lower or equal to the number of bombs, it does not decrease
 		if (size * size <= this->nBombs)
@@ -230,7 +230,7 @@ public:
 	}
 
 	// Set the new bomb number value if the new bomb number does not generate a grid with more bomb than cells
-	bool setBomb(size_t bombs)
+	bool SetNBombs(size_t bombs)
 	{
 		if (bombs >= this->gridSize * this->gridSize)
 			return false;
@@ -239,7 +239,8 @@ public:
 		return true;
 	}
 
-	void setPowerUp(bool status)
+	// Set the new value of the powerup option and update it's button to reflect the new value.
+	void SetPowerUp(bool status)
 	{
 		this->powerupOn = status;
 		if (status)
